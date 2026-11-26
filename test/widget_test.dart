@@ -6,25 +6,55 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:practica_estudiantes/main.dart';
+import 'package:practica_estudiantes/cubit/estudiantes_cubit.dart';
+import 'package:practica_estudiantes/models/estudiante.dart';
+import 'package:practica_estudiantes/screens/estudiantes_page.dart';
+import 'package:practica_estudiantes/services/estudiante_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('filtra estudiantes por ciudad sin distinguir mayúsculas', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => EstudiantesCubit(const ServicioEstudiantesFalso()),
+        child: const MaterialApp(home: EstudiantesPage()),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.tap(find.text('Cargar estudiantes'));
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(find.text('Carlos Pérez'), findsOneWidget);
+    expect(find.text('Lucía Gómez'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'VALENCIA');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carlos Pérez'), findsOneWidget);
+    expect(find.text('Lucía Gómez'), findsNothing);
   });
+}
+
+class ServicioEstudiantesFalso extends EstudianteService {
+  const ServicioEstudiantesFalso();
+
+  @override
+  Future<List<Estudiante>> obtenerEstudiantes() async => const [
+    Estudiante(
+      id: 1,
+      nombre: 'Carlos Pérez',
+      correo: 'carlos@example.com',
+      ciudad: 'Valencia',
+    ),
+    Estudiante(
+      id: 2,
+      nombre: 'Lucía Gómez',
+      correo: 'lucia@example.com',
+      ciudad: 'Sevilla',
+    ),
+  ];
 }
